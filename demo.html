@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Hackrs Kombat - Mortal Kombat Metaverse 3D Next-Gen</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Orbitron', 'Rajdhani', 'Courier New', monospace;
+            background-color: black;
+            color: white;
+        }
+
+        /* HUD Moderno y elegante */
+        .hud {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            pointer-events: none;
+            z-index: 20;
+            font-family: 'Orbitron', monospace;
+            text-shadow: 0 0 15px rgba(0,255,255,0.8);
+        }
+
+        .round-indicator {
+            position: absolute;
+            top: 70px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: 6px;
+            background: linear-gradient(135deg, gold, #ff5500);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 20px rgba(255,0,0,0.5);
+            background-color: rgba(0,0,0,0.5);
+            width: 260px;
+            margin: 0 auto;
+            border-radius: 40px;
+            padding: 8px;
+            border: 2px solid cyan;
+            backdrop-filter: blur(8px);
+            z-index: 20;
+            font-weight: bold;
+        }
+
+        .fight-text {
+            position: absolute;
+            top: 40%;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 6rem;
+            font-weight: 900;
+            color: transparent;
+            background: linear-gradient(45deg, #ff0066, #ffcc00, #00ffff, #ff0066);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(255,0,100,0.8);
+            z-index: 30;
+            opacity: 0;
+            transition: opacity 0.3s cubic-bezier(0.2, 1.2, 0.8, 1);
+            pointer-events: none;
+            letter-spacing: 12px;
+            animation: gradientShift 1.5s infinite;
+            white-space: nowrap;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .health-bars {
+            position: absolute;
+            top: 25px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 20;
+            gap: 30px;
+        }
+
+        .health-container {
+            background: rgba(0,0,0,0.85);
+            border-radius: 20px;
+            padding: 12px 20px;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0,255,255,0.6);
+            box-shadow: 0 0 25px rgba(0,255,255,0.3);
+            width: 280px;
+            transition: all 0.2s;
+        }
+
+        .health-label {
+            font-size: 1.3rem;
+            font-weight: bold;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Orbitron', monospace;
+        }
+
+        .health-bar-bg {
+            background: #220000;
+            height: 24px;
+            border-radius: 30px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.5);
+        }
+
+        .health-bar-fill {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #ff2266, #ff6699, #ff2266);
+            border-radius: 30px;
+            transition: width 0.15s ease-out;
+            box-shadow: 0 0 12px #ff3366;
+        }
+
+        .right .health-bar-fill {
+            background: linear-gradient(90deg, #22ff66, #66ffaa, #22ff66);
+            box-shadow: 0 0 12px #33ff66;
+        }
+
+        .hackrs-watermark {
+            position: absolute;
+            bottom: 30px;
+            right: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            background: rgba(0,0,0,0.7);
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-family: monospace;
+            letter-spacing: 3px;
+            border-right: 4px solid cyan;
+            border-left: 1px solid magenta;
+            backdrop-filter: blur(5px);
+            pointer-events: none;
+            z-index: 20;
+            color: #0ff;
+            text-shadow: 0 0 5px magenta;
+        }
+
+        @keyframes pulseGlow {
+            0% { text-shadow: 0 0 5px cyan; opacity: 0.9; transform: scale(1);}
+            100% { text-shadow: 0 0 30px magenta, 0 0 15px cyan; opacity: 1; transform: scale(1.02);}
+        }
+
+        @media (max-width: 700px) {
+            .health-container { width: 180px; padding: 6px 12px; }
+            .health-label { font-size: 0.8rem; }
+            .round-indicator { font-size: 1.2rem; width: 180px; top: 50px; }
+            .fight-text { font-size: 3rem; letter-spacing: 6px; white-space: nowrap; top: 45%;}
+        }
+    </style>
+</head>
+<body>
+    <div class="hud">
+        <div class="round-indicator" id="roundText">⚡ METAVERSE KOMBAT ⚡</div>
+        <div class="health-bars">
+            <div class="health-container">
+                <div class="health-label"><span>👾 HACKR-NEO 👾</span><span id="health1Value">100%</span></div>
+                <div class="health-bar-bg"><div class="health-bar-fill" id="healthFill1" style="width: 100%"></div></div>
+            </div>
+            <div class="health-container right">
+                <div class="health-label"><span>🌀 HACKR-ZERO 🌀</span><span id="health2Value">100%</span></div>
+                <div class="health-bar-bg"><div class="health-bar-fill" id="healthFill2" style="width: 100%"></div></div>
+            </div>
+        </div>
+        <div class="fight-text" id="fightText">⚔️ HACKRS ⚔️</div>
+        <div class="hackrs-watermark">[ HACKRS // MORTAL KOMBAT METAVERSE ]</div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        
+        // --- setup scene, cameras, renderers con efecto bloom
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x010102);
+        scene.fog = new THREE.FogExp2(0x010102, 0.006);
+        
+        const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(4.8, 3.2, 7.5);
+        camera.lookAt(0, 1.2, 0);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ReinhardToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        document.body.appendChild(renderer.domElement);
+        
+        // Post processing bloom
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.2, 0.3, 0.85);
+        bloomPass.threshold = 0.1;
+        bloomPass.strength = 0.75;
+        bloomPass.radius = 0.5;
+        const effectComposer = new EffectComposer(renderer);
+        effectComposer.addPass(renderScene);
+        effectComposer.addPass(bloomPass);
+        
+        const labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0px';
+        labelRenderer.domElement.style.left = '0px';
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        labelRenderer.domElement.style.zIndex = '10';
+        document.body.appendChild(labelRenderer.domElement);
+        
+        // Controls con auto-rotación suave para dinamismo
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.06;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.8;
+        controls.enableZoom = true;
+        controls.enablePan = false;
+        controls.target.set(0, 1.5, 0);
+        
+        // --- ILUMINACIÓN ÉPICA
+        const ambientLight = new THREE.AmbientLight(0x111122);
+        scene.add(ambientLight);
+        const mainLight = new THREE.DirectionalLight(0xffccaa, 1.3);
+        mainLight.position.set(4, 6, 3);
+        mainLight.castShadow = true;
+        mainLight.receiveShadow = true;
+        mainLight.shadow.mapSize.width = 2048;
+        mainLight.shadow.mapSize.height = 2048;
+        scene.add(mainLight);
+        const fillLight = new THREE.PointLight(0x3366ff, 0.7);
+        fillLight.position.set(0, 2, 1);
+        scene.add(fillLight);
+        const backRim = new THREE.PointLight(0xff44aa, 0.9);
+        backRim.position.set(-2, 2.5, -4);
+        scene.add(backRim);
+        const dynamicNeon = new THREE.PointLight(0x00ffff, 0.8);
+        dynamicNeon.position.set(0, 1.2, 0);
+        scene.add(dynamicNeon);
+        
+        // SUELO REFLECTIVO + REJILLA HEX
+        const gridHelper = new THREE.GridHelper(22, 40, 0x00ccff, 0x33aaff);
+        gridHelper.position.y = -0.55;
+        gridHelper.material.transparent = true;
+        gridHelper.material.opacity = 0.5;
+        scene.add(gridHelper);
+        
+        const glassPlane = new THREE.Mesh(
+            new THREE.PlaneGeometry(14, 10),
+            new THREE.MeshStandardMaterial({ color: 0x001133, metalness: 0.95, roughness: 0.2, emissive: 0x001133, transparent: true, opacity: 0.6 })
+        );
+        glassPlane.rotation.x = -Math.PI / 2;
+        glassPlane.position.y = -0.52;
+        glassPlane.receiveShadow = true;
+        scene.add(glassPlane);
+        
+        // Anillo central estilo Kombat
+        const arenaRing = new THREE.Mesh(
+            new THREE.TorusGeometry(3.9, 0.14, 64, 200),
+            new THREE.MeshStandardMaterial({ color: 0xff33cc, emissive: 0x441133, metalness: 0.85, roughness: 0.2 })
+        );
+        arenaRing.rotation.x = Math.PI / 2;
+        arenaRing.position.y = -0.35;
+        scene.add(arenaRing);
+        
+        // Cubos flotantes con efecto glitch
+        const floatCubes = [];
+        for (let i = 0; i < 40; i++) {
+            const size = 0.1 + Math.random() * 0.15;
+            const material = new THREE.MeshStandardMaterial({ color: 0x33aaff, emissive: 0x004477, metalness: 0.7, emissiveIntensity: 0.4 });
+            const cube = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), material);
+            cube.position.set((Math.random() - 0.5) * 11, Math.random() * 3.5 + 0.2, (Math.random() - 0.5) * 8);
+            cube.castShadow = true;
+            scene.add(cube);
+            floatCubes.push({ mesh: cube, speed: 0.4 + Math.random() * 1.2, offsetY: cube.position.y, rotSpeed: 0.01 + Math.random() * 0.02 });
+        }
+        
+        // Sistema de partículas energéticas mejorado
+        const particleCount = 1800;
+        const particleGeo = new THREE.BufferGeometry();
+        const particlePos = new Float32Array(particleCount * 3);
+        for (let i = 0; i < particleCount; i++) {
+            particlePos[i*3] = (Math.random() - 0.5) * 18;
+            particlePos[i*3+1] = Math.random() * 6;
+            particlePos[i*3+2] = (Math.random() - 0.5) * 14;
+        }
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
+        const particleMat = new THREE.PointsMaterial({ color: 0x88aaff, size: 0.045, transparent: true, blending: THREE.AdditiveBlending });
+        const particleSys = new THREE.Points(particleGeo, particleMat);
+        scene.add(particleSys);
+        
+        // SEGUNDO SISTEMA DE PARTÍCULAS ROJAS
+        const bloodParticles = new THREE.BufferGeometry();
+        const bloodPos = new Float32Array(800 * 3);
+        for (let i = 0; i < 800; i++) {
+            bloodPos[i*3] = (Math.random() - 0.5) * 12;
+            bloodPos[i*3+1] = Math.random() * 4;
+            bloodPos[i*3+2] = (Math.random() - 0.5) * 10;
+        }
+        bloodParticles.setAttribute('position', new THREE.BufferAttribute(bloodPos, 3));
+        const bloodMat = new THREE.PointsMaterial({ color: 0xff3366, size: 0.04, transparent: true, blending: THREE.AdditiveBlending });
+        const bloodSys = new THREE.Points(bloodParticles, bloodMat);
+        scene.add(bloodSys);
+        
+        // Logo 3D HACKRS espectacular
+        const hackrsDiv = document.createElement('div');
+        hackrsDiv.textContent = 'HACKRS';
+        hackrsDiv.style.fontFamily = "'Orbitron', 'Impact', monospace";
+        hackrsDiv.style.fontSize = '86px';
+        hackrsDiv.style.fontWeight = 'bold';
+        hackrsDiv.style.background = 'linear-gradient(135deg, #ff00cc, #00ffff, #ff3366, #ffcc00)';
+        hackrsDiv.style.backgroundSize = '300% 300%';
+        hackrsDiv.style.webkitBackgroundClip = 'text';
+        hackrsDiv.style.backgroundClip = 'text';
+        hackrsDiv.style.color = 'transparent';
+        hackrsDiv.style.textShadow = '0 0 40px rgba(0,255,255,0.9)';
+        hackrsDiv.style.letterSpacing = '12px';
+        hackrsDiv.style.border = '2px solid rgba(0,255,255,0.7)';
+        hackrsDiv.style.padding = '20px 42px';
+        hackrsDiv.style.borderRadius = '60px';
+        hackrsDiv.style.backdropFilter = 'blur(16px)';
+        hackrsDiv.style.backgroundColor = 'rgba(0,0,0,0.6)';
+        hackrsDiv.style.whiteSpace = 'nowrap';
+        hackrsDiv.style.animation = 'pulseGlow 1s infinite alternate';
+        const hackrsLabel = new CSS2DObject(hackrsDiv);
+        hackrsLabel.position.set(0, 2.6, 0);
+        scene.add(hackrsLabel);
+        
+        // Anillos rotatorios alrededor del texto
+        const outerRing = new THREE.Mesh(new THREE.TorusGeometry(2.2, 0.08, 64, 200), new THREE.MeshStandardMaterial({ color: 0xff44aa, emissive: 0xff1188, metalness: 0.9 }));
+        outerRing.position.set(0, 2.6, 0);
+        scene.add(outerRing);
+        const innerRing = new THREE.Mesh(new THREE.TorusGeometry(1.7, 0.06, 64, 200), new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x00aacc, metalness: 0.9 }));
+        innerRing.position.set(0, 2.6, 0);
+        scene.add(innerRing);
+        
+        // FIGHTERS ULTRA DETALLADOS (modelado con armaduras cibernéticas)
+        function createEliteFighter(colorPri, colorSec, posX, nameTag) {
+            const group = new THREE.Group();
+            // Torso acorazado
+            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.6, 1.1, 12), new THREE.MeshStandardMaterial({ color: colorPri, metalness: 0.85, roughness: 0.25, emissive: colorPri, emissiveIntensity: 0.3 }));
+            torso.castShadow = true;
+            torso.position.y = 0.6;
+            group.add(torso);
+            // Cinturón
+            const belt = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.08, 16, 40), new THREE.MeshStandardMaterial({ color: 0xffaa44, metalness: 0.9 }));
+            belt.position.y = 0.15;
+            belt.rotation.x = Math.PI/2;
+            group.add(belt);
+            // Cabeza
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.45, 32, 32), new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.7, roughness: 0.3 }));
+            head.position.y = 1.2;
+            group.add(head);
+            // Casco/Visor
+            const visor = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.25, 0.15), new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x00aaff, emissiveIntensity: 0.9 }));
+            visor.position.set(0, 1.18, 0.48);
+            group.add(visor);
+            // Hombros acerados
+            const shoulderL = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.4, 0.55), new THREE.MeshStandardMaterial({ color: colorSec, metalness: 0.9 }));
+            shoulderL.position.set(-0.65, 0.95, 0);
+            const shoulderR = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.4, 0.55), new THREE.MeshStandardMaterial({ color: colorSec, metalness: 0.9 }));
+            shoulderR.position.set(0.65, 0.95, 0);
+            group.add(shoulderL);
+            group.add(shoulderR);
+            // Brazos
+            const armMat = new THREE.MeshStandardMaterial({ color: colorPri, metalness: 0.7 });
+            const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.9, 8), armMat);
+            leftArm.position.set(-0.75, 0.85, 0);
+            const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.9, 8), armMat);
+            rightArm.position.set(0.75, 0.85, 0);
+            group.add(leftArm);
+            group.add(rightArm);
+            // Arma energética tipo katana
+            const bladeMat = new THREE.MeshStandardMaterial({ color: 0xff3366, emissive: 0xff1166, emissiveIntensity: 1.0 });
+            const katana = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.7, 0.1), bladeMat);
+            katana.position.set(0.9, 0.7, 0.3);
+            group.add(katana);
+            // Piernas
+            const legMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.6 });
+            const leftLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.8, 8), legMat);
+            leftLeg.position.set(-0.32, 0.25, 0);
+            const rightLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.8, 8), legMat);
+            rightLeg.position.set(0.32, 0.25, 0);
+            group.add(leftLeg);
+            group.add(rightLeg);
+            
+            group.position.set(posX, -0.25, 0);
+            return group;
+        }
+        
+        const fighterLeft = createEliteFighter(0x33aaff, 0x2266cc, -2.5, "NEO");
+        const fighterRight = createEliteFighter(0xff3366, 0xcc2255, 2.5, "ZERO");
+        scene.add(fighterLeft);
+        scene.add(fighterRight);
+        
+        // Auroras dinámicas alrededor de luchadores
+        const auraLeft = new THREE.Mesh(new THREE.SphereGeometry(0.95, 24, 24), new THREE.MeshBasicMaterial({ color: 0x33aaff, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending }));
+        fighterLeft.add(auraLeft);
+        const auraRight = new THREE.Mesh(new THREE.SphereGeometry(0.95, 24, 24), new THREE.MeshBasicMaterial({ color: 0xff3366, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending }));
+        fighterRight.add(auraRight);
+        
+        // CSS2D health tags flotantes
+        const tagDiv1 = document.createElement('div');
+        tagDiv1.textContent = '⚡ HACKR-NEO ⚡';
+        tagDiv1.style.cssText = 'background:rgba(0,0,0,0.7); color:#88aaff; padding:4px 12px; border-radius:30px; border:1px solid cyan; font-weight:bold; backdrop-filter:blur(4px);';
+        const tag1 = new CSS2DObject(tagDiv1);
+        tag1.position.set(-2.5, 2.0, 0);
+        scene.add(tag1);
+        
+        const tagDiv2 = document.createElement('div');
+        tagDiv2.textContent = '🌀 HACKR-ZERO 🌀';
+        tagDiv2.style.cssText = 'background:rgba(0,0,0,0.7); color:#ff88aa; padding:4px 12px; border-radius:30px; border:1px solid magenta; font-weight:bold;';
+        const tag2 = new CSS2DObject(tagDiv2);
+        tag2.position.set(2.5, 2.0, 0);
+        scene.add(tag2);
+        
+        // --- LÓGICA DE KOMBAT ÉPICA Y EFECTOS
+        let health1 = 100, health2 = 100;
+        let roundActive = true;
+        let lastAttack = 0;
+        let cameraShake = 0;
+        const fill1 = document.getElementById('healthFill1');
+        const fill2 = document.getElementById('healthFill2');
+        const health1Val = document.getElementById('health1Value');
+        const health2Val = document.getElementById('health2Value');
+        const fightOverlay = document.getElementById('fightText');
+        
+        function updateUI() {
+            fill1.style.width = `${health1}%`;
+            fill2.style.width = `${health2}%`;
+            health1Val.innerText = `${Math.floor(health1)}%`;
+            health2Val.innerText = `${Math.floor(health2)}%`;
+        }
+        
+        function screenFlashIntense(colorHex) {
+            const flashDiv = document.createElement('div');
+            flashDiv.style.position = 'fixed';
+            flashDiv.style.top = '0';
+            flashDiv.style.left = '0';
+            flashDiv.style.width = '100%';
+            flashDiv.style.height = '100%';
+            flashDiv.style.backgroundColor = colorHex;
+            flashDiv.style.opacity = '0.4';
+            flashDiv.style.pointerEvents = 'none';
+            flashDiv.style.zIndex = '999';
+            document.body.appendChild(flashDiv);
+            setTimeout(() => flashDiv.remove(), 120);
+        }
+        
+        function spawnHitExplosion(pos) {
+            const expGroup = new THREE.Group();
+            const particleCountExp = 60;
+            for (let i = 0; i < particleCountExp; i++) {
+                const geom = new THREE.SphereGeometry(0.05, 4, 4);
+                const mat = new THREE.MeshStandardMaterial({ color: 0xff6600, emissive: 0xff2200, emissiveIntensity: 0.8 });
+                const particle = new THREE.Mesh(geom, mat);
+                particle.userData = { vel: new THREE.Vector3((Math.random() - 0.5) * 1.2, Math.random() * 1.5, (Math.random() - 0.5) * 1.2), life: 0.5 };
+                particle.position.copy(pos);
+                expGroup.add(particle);
+            }
+            scene.add(expGroup);
+            setTimeout(() => scene.remove(expGroup), 500);
+        }
+        
+        function applyDamage(target, amount) {
+            if (!roundActive) return;
+            if (target === 'left') {
+                health1 = Math.max(0, health1 - amount);
+                updateUI();
+                screenFlashIntense('rgba(255,50,100,0.5)');
+                if (health1 <= 0) endRound('right');
+            } else {
+                health2 = Math.max(0, health2 - amount);
+                updateUI();
+                screenFlashIntense('rgba(50,255,100,0.5)');
+                if (health2 <= 0) endRound('left');
+            }
+            cameraShake = 0.2;
+            // efecto de vibración en label
+            hackrsDiv.style.transform = 'scale(1.15)';
+            setTimeout(() => hackrsDiv.style.transform = 'scale(1)', 150);
+            const hitPos = target === 'left' ? fighterLeft.position.clone() : fighterRight.position.clone();
+            hitPos.y += 0.9;
+            spawnHitExplosion(hitPos);
+        }
+        
+        function endRound(winner) {
+            if (!roundActive) return;
+            roundActive = false;
+            fightOverlay.style.opacity = '1';
+            fightOverlay.textContent = winner === 'left' ? '🔥 HACKRS VICTORY! 🔥' : '💀 HACKRS DOMINATES! 💀';
+            setTimeout(() => {
+                fightOverlay.style.opacity = '0';
+                setTimeout(() => {
+                    health1 = 100; health2 = 100;
+                    updateUI();
+                    roundActive = true;
+                }, 1800);
+            }, 1700);
+        }
+        
+        function performCombat(now) {
+            if (!roundActive) return;
+            if (now - lastAttack > 2.0) {
+                lastAttack = now;
+                if (health2 > 0) {
+                    applyDamage('right', 11 + Math.random() * 10);
+                    animateAttack(fighterLeft, true);
+                }
+                setTimeout(() => {
+                    if (roundActive && health1 > 0 && health2 > 0) {
+                        applyDamage('left', 9 + Math.random() * 12);
+                        animateAttack(fighterRight, false);
+                    }
+                }, 380);
+            }
+        }
+        
+        function animateAttack(fighter, isLeft) {
+            const origX = fighter.position.x;
+            fighter.position.x += isLeft ? 0.45 : -0.45;
+            setTimeout(() => fighter.position.x = origX, 130);
+            const katana = fighter.children.find(c => c.geometry && c.position.x > 0.8);
+            if (katana) katana.material.emissiveIntensity = 1.8;
+            setTimeout(() => { if(katana) katana.material.emissiveIntensity = 0.9; }, 200);
+        }
+        
+        // Anim loop variables
+        let time = 0;
+        
+        function animate() {
+            const nowSec = performance.now() / 1000;
+            time += 0.016;
+            performCombat(nowSec);
+            
+            // Idle animation fighters
+            fighterLeft.position.y = -0.25 + Math.sin(time * 3.5) * 0.025;
+            fighterRight.position.y = -0.25 + Math.sin(time * 3.8) * 0.025;
+            fighterLeft.rotation.z = Math.sin(time * 2) * 0.02;
+            fighterRight.rotation.z = Math.sin(time * 2.2) * -0.02;
+            
+            // Rotación de anillos
+            outerRing.rotation.z += 0.015;
+            outerRing.rotation.x = Math.sin(time * 0.7) * 0.2;
+            innerRing.rotation.y -= 0.02;
+            innerRing.rotation.x = Math.cos(time * 0.5) * 0.15;
+            
+            floatCubes.forEach(c => {
+                c.mesh.position.y = c.offsetY + Math.sin(time * c.speed) * 0.12;
+                c.mesh.rotation.x += c.rotSpeed;
+                c.mesh.rotation.y += c.rotSpeed * 0.7;
+            });
+            
+            particleSys.rotation.y += 0.0015;
+            bloodSys.rotation.x += 0.001;
+            dynamicNeon.intensity = 0.7 + Math.sin(time * 6) * 0.5;
+            fillLight.intensity = 0.6 + Math.sin(time * 2.2) * 0.2;
+            
+            // camera shake
+            if (cameraShake > 0) {
+                camera.position.x += (Math.random() - 0.5) * cameraShake * 0.1;
+                camera.position.y += (Math.random() - 0.5) * cameraShake * 0.07;
+                cameraShake *= 0.85;
+            }
+            controls.update();
+            effectComposer.render();
+            labelRenderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+        
+        // Efecto inicial de FIGHT
+        setTimeout(() => {
+            fightOverlay.style.opacity = '1';
+            setTimeout(() => fightOverlay.style.opacity = '0', 1300);
+        }, 400);
+        
+        animate();
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            effectComposer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // Esfera central pulsante
+        const coreGlow = new THREE.Mesh(new THREE.SphereGeometry(0.45, 32, 32), new THREE.MeshStandardMaterial({ color: 0xff44aa, emissive: 0xff2288, emissiveIntensity: 0.9 }));
+        coreGlow.position.set(0, 0.9, 0);
+        scene.add(coreGlow);
+        
+        console.log("HACKRS MORTAL KOMBAT METAVERSE - NEXT GEN");
+    </script>
+</body>
+</html>
